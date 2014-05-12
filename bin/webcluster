@@ -1,0 +1,115 @@
+#!/bin/bash
+
+# The Following script will start a webcluster based on the input configuration file.
+# Version 1.0 : Create n number of Webserver per config file.
+#               Create load balancer configuration and supporting instance  
+
+
+### Don't make any changes below this file ####
+if [[ ! -f ../etc/env.conf ]];then
+  echo "environment file could not be found..aborting"
+  exit 1
+ else
+ . ../etc/env.conf
+fi
+
+check_image () {
+for i in `cat $conf_file |grep -v '#' |grep www`
+do
+ image_name=`echo $i|cut -d, -f2`
+ check_doc=`docker images |grep $image_name|awk {'print $1'}|wc -l`  
+ if [[ $check_doc -ne 1 ]];then
+  echo "Configuration file contains image name:$image_name which does not exist..aborting" 
+  echo "make sure you build it before you run this script"
+  exit 1
+ fi
+done
+}
+
+create_web () {
+for i in `cat $conf_file |grep -v '#' |grep www`
+do
+ hname=`echo $i |cut -d, -f1`
+ hip=`echo $i |cut -d, -f4`
+ echo "starting instance:$hname"
+ docker run --name $hname -d www 
+ $home/sbin/pipework docker0 $hname $hip/24
+done
+}
+
+stop_servers () {
+for i in `cat $conf_file |grep -v '#'|cut -d, -f1`
+do
+ docker stop $i
+ docker rm $i
+done
+} 
+
+create_nlb () {
+for i in `cat $conf_file |grep -v '#' |grep nlb`
+do
+ hname=`echo $i |cut -d, -f1`
+ hip=`echo $i |cut -d, -f4`
+ echo "starting instance:$hname"
+ docker run --name $hname -d nlb 
+ $home/sbin/pipework docker0 $hname $hip/24
+done
+}
+
+create_haconf () {
+val=""
+nlb_ip=`cat $conf_file |grep -v '#' |grep nlb|cut -d, -f4`
+
+for i in `cat $conf_file |grep -v '#' |grep www`
+do
+ hip=`echo $i |cut -d, -f4`
+ val=$val"\tserver srv $hip:80 maxconn 254\n"
+done
+sed -e "s/server srv NLB_IP:80 maxconn 254/$val/" $home/etc/sample_haproxy.cfg > $home/tmp/haproxy.cfg
+scp -o StrictHostKeyChecking=no -i $home/etc/nscale_id $home/tmp/haproxy.cfg $nlb_ip:/etc/haproxy/haproxy.cfg
+ssh -o StrictHostKeyChecking=no -i $home/etc/nscale_id $nlb_ip "service haproxy restart"
+echo "haproxy updated..."
+}
+
+print_status ()
+{
+ docker ps 
+}
+
+help () {
+    echo 'missing parameters'
+    echo 'syntax : $0 -create,stop name_of_config_file.conf'
+    echo " "
+    echo 'example config file can be found in $home/etc/sample_webcluster.conf'
+}
+
+#### Main ####
+
+if [[ $# -eq 0 ]] ; then
+    help
+    exit 0
+fi
+
+case "$1" in
+    -create) conf_file=$2 
+        if [[ ! -f $conf_file ]];then
+           echo "file not found"
+        else 
+          check_image
+          create_web 
+          create_nlb
+          create_haconf
+          print_status
+        fi
+      ;;
+    -stop) conf_file=$2 
+        if [[ ! -f $conf_file ]];then
+           echo "file not found"
+        else 
+          stop_servers
+        fi
+      ;;
+    *) echo 'you gave something else'
+       help
+       ;;
+esac 
