@@ -7,18 +7,18 @@ Reference Multi-Tier Architecture to build a n-tier using Docker.
 
 Components :
 
- Web-Tier
-  Network Load Balancer (haproxy)
-  WebServer (apache)
+Web-Tier
+ Network Load Balancer (haproxy)
+ WebServer (apache)
 
- Data-Tier
-  Distributed Filesystem (Hadoop HDFS)
-  Scalable SQL : Hive
-  KeyValue Store : Hbase.
-  In-Memory Store : Spark
+Data-Tier
+ Distributed Filesystem (Hadoop HDFS)
+ Scalable SQL : Hive
+ KeyValue Store : Hbase.
+ In-Memory Store : Spark
 
- Search 
-  Elastic Search
+Search 
+ Elastic Search
 
- Presentation 
-  Kibana
+Presentation 
+ Kibana
