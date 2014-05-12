@@ -1,24 +1,9 @@
-nscale-bigdata-blue-print1
-==========================
+# nscale-bigdata-blue-print1
+Reference blueprint, which is highly optimized to build a multi-tier server farm on a local linux server
+Components include a) Network Loadbalancer b) Webserver c) Hadoop (HDFS/Hive/Hbase d) Search Analytics (Elastic Search/Kibana)  
 
-nScale Application BigData Application Reference Architecture/Blueprint #1
+# Environment
+Docker 0.11+
+Haproxy
+Apache
 
-Reference Multi-Tier Architecture to build a n-tier using Docker.
-
-Components :
-
-Web-Tier
- Network Load Balancer (haproxy)
- WebServer (apache)
-
-Data-Tier
- Distributed Filesystem (Hadoop HDFS)
- Scalable SQL : Hive
- KeyValue Store : Hbase.
- In-Memory Store : Spark
-
-Search 
- Elastic Search
-
-Presentation 
- Kibana
